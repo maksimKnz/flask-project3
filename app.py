@@ -25,6 +25,7 @@ teachers_goals = db.Table('teachers_goals',
                           db.Column('teacher_id', db.Integer, db.ForeignKey('teachers.id')),
                           db.Column('goal_id', db.Integer, db.ForeignKey('goals.id')))
 
+
 class Goal(db.Model):
     __tablename__ = "goals"
     id = db.Column(db.Integer, primary_key=True)
@@ -32,6 +33,7 @@ class Goal(db.Model):
     goal = db.Column(db.String)
     pic = db.Column(db.String)
     teachers = db.relationship("Teacher", secondary=teachers_goals, back_populates="goals")
+
 
 class Teacher(db.Model):
     __tablename__ = "teachers"
@@ -199,9 +201,6 @@ def booking(teacher_id, day, time):
             return render_template("booking.html", teacher_id=teacher_id, teacher=teacher, day_origin=day, day=what_day, time_origin=time_origin, time=time, days=days, form=form)
     else:
         return render_template("booking.html", teacher_id=teacher.id, teacher=teacher, day_origin=day, day=what_day, time_origin=time_origin, time=time, days=days, form=form)
-
-
-
 
 
 if __name__ == '__main__':
