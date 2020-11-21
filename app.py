@@ -14,7 +14,7 @@ app.secret_key = 'Secret!'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///main.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 db = SQLAlchemy(app)
-migrate = Migrate(app, db, render_as_batch=True)
+migrate = Migrate(app, db)
 
 
 hours = {"1-2": "1-2 часа", "3-5": "3-5 часов", "5-7": "5-7 часов", "7-10": "7-10 часов"}
@@ -25,7 +25,6 @@ teachers_goals = db.Table('teachers_goals',
                           db.Column('teacher_id', db.Integer, db.ForeignKey('teachers.id')),
                           db.Column('goal_id', db.Integer, db.ForeignKey('goals.id')))
 
-
 class Goal(db.Model):
     __tablename__ = "goals"
     id = db.Column(db.Integer, primary_key=True)
@@ -33,7 +32,6 @@ class Goal(db.Model):
     goal = db.Column(db.String)
     pic = db.Column(db.String)
     teachers = db.relationship("Teacher", secondary=teachers_goals, back_populates="goals")
-
 
 class Teacher(db.Model):
     __tablename__ = "teachers"
@@ -66,9 +64,6 @@ class RequestTeacher(db.Model):
     phone = db.Column(db.String, nullable=False)
     goal = db.Column(db.String, nullable=False)
     time = db.Column(db.String, nullable=False)
-
-
-db.create_all()
 
 
 def make_database():
@@ -204,6 +199,9 @@ def booking(teacher_id, day, time):
             return render_template("booking.html", teacher_id=teacher_id, teacher=teacher, day_origin=day, day=what_day, time_origin=time_origin, time=time, days=days, form=form)
     else:
         return render_template("booking.html", teacher_id=teacher.id, teacher=teacher, day_origin=day, day=what_day, time_origin=time_origin, time=time, days=days, form=form)
+
+
+
 
 
 if __name__ == '__main__':
