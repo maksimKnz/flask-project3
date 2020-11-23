@@ -3,7 +3,7 @@ import json
 import phonenumbers
 from flask import Flask, render_template, request
 from flask_wtf import FlaskForm
-from wtforms import StringField, HiddenField, RadioField
+from wtforms import StringField, HiddenField, RadioField, SelectField
 from wtforms.validators import Length, ValidationError
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -12,7 +12,7 @@ from flask_migrate import Migrate
 app = Flask(__name__)
 app.secret_key = 'Secret!'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///main.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
@@ -20,6 +20,8 @@ migrate = Migrate(app, db)
 hours = {"1-2": "1-2 часа", "3-5": "3-5 часов", "5-7": "5-7 часов", "7-10": "7-10 часов"}
 days = {"mon": "Понедельник", "tue": "Вторник", "wed": "Среда", "thu": "Четверг", "fri": "Пятница", "sat": "Суббота", "sun": "Воскресенье"}
 week = {'sun': 'sunday', 'mon': 'monday', 'tue': 'tuesday', 'wed': 'wednesday', 'thu': 'thursday', 'fri': 'friday', 'sat': 'saturday'}
+sort_types = {'0': 'В случайном порядке', '1': 'Сначала дорогие', '2': 'Сначала недорогие', '3': 'Сначала лучшие по рейтингу'}
+
 
 teachers_goals = db.Table('teachers_goals',
                           db.Column('teacher_id', db.Integer, db.ForeignKey('teachers.id')),
@@ -112,6 +114,10 @@ def add_record(name, phone, teacher_id, day, time):
     db.session.commit()
 
 
+class SortTeachers(FlaskForm):
+    sort_type = SelectField('Тип сортировки', choices=[(key, value) for key, value in sort_types.items()], default='0')
+
+
 class RequestForm(FlaskForm):
     goals = db.session.query(Goal).all()
     goal_choices = {}
@@ -144,11 +150,20 @@ def main():
     return render_template('index.html', teachers=sorted_list, goals=goals)
 
 
-@app.route('/all/')
+@app.route('/all/', methods=['POST', 'GET'])
 def all_teachers():
+    form = SortTeachers()
     teachers = db.session.query(Teacher).all()
-    goals = db.session.query(Goal).all()
-    return render_template('index.html', teachers=teachers, ids=[i for i in range(len(teachers))], goals=goals)
+    if request.method == 'POST':
+        sort_type = form.sort_type.data
+        if sort_type == '1':
+            teachers = db.session.query(Teacher).order_by(Teacher.price.desc()).all()
+        if sort_type == '2':
+            teachers = db.session.query(Teacher).order_by(Teacher.price).all()
+        if sort_type == '3':
+            teachers = db.session.query(Teacher).order_by(Teacher.rating.desc()).all()
+
+    return render_template('all.html', teachers=teachers, form=form)
 
 
 @app.route('/goals/<goal>/')
