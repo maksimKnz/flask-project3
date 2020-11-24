@@ -182,40 +182,30 @@ def show_profile(teacher_id):
 @app.route('/request/', methods=['POST', 'GET'])
 def make_request():
     form = RequestForm()
-    if request.method == 'POST':
-        if form.validate_on_submit():
-            name = form.clientName.data
-            phone = form.clientPhone.data
-            goal = form.goals.data
-            time = form.time.data
-            add_callback(name, phone, goal, time)
-            return render_template("request_done.html", name=name, phone=phone, goal=goal, time=hours.get(time))
-        else:
-            return render_template("request.html", form=form)
+    if request.method == 'POST' and form.validate_on_submit():
+        name = form.clientName.data
+        phone = form.clientPhone.data
+        goal = form.goals.data
+        time = form.time.data
+        add_callback(name, phone, goal, time)
+        return render_template("request_done.html", name=name, phone=phone, goal=goal, time=hours.get(time))
     else:
         return render_template("request.html", form=form)
 
 
 @app.route('/booking/<int:teacher_id>/<day>/<time>/', methods=['POST', 'GET'])
 def booking(teacher_id, day, time):
-    teacher = db.session.query(Teacher).get(teacher_id)
+    teacher = db.session.query(Teacher).get_or_404(teacher_id)
     what_day = convert_day(day)
-    time_origin = time
-    time = time + ":00"
+    time_for_write = time + ":00"
     form = BookingForm(clientTime=time, clientWeekday=what_day, clientTeacher=teacher_id)
-    if request.method == 'POST':
-        if form.validate_on_submit():
-            name = form.clientName.data
-            phone = form.clientPhone.data
-            day = form.clientWeekday.data
-            time = form.clientTime.data
-            teacher_id = int(form.clientTeacher.data)
-            add_record(name, phone, teacher_id, day, time)
-            return render_template("booking_done.html", name=name, phone=phone, day=days.get(day), time=time, teacher_id=teacher_id)
-        else:
-            return render_template("booking.html", teacher_id=teacher_id, teacher=teacher, day_origin=day, day=what_day, time_origin=time_origin, time=time, days=days, form=form)
+    if request.method == 'POST' and form.validate_on_submit():
+        name = form.clientName.data
+        phone = form.clientPhone.data
+        add_record(name, phone, teacher_id, what_day, time_for_write)
+        return render_template("booking_done.html", name=name, phone=phone, day=days.get(what_day), time=time, teacher_id=teacher_id)
     else:
-        return render_template("booking.html", teacher_id=teacher.id, teacher=teacher, day_origin=day, day=what_day, time_origin=time_origin, time=time, days=days, form=form)
+        return render_template("booking.html", teacher_id=teacher.id, teacher=teacher, what_day=what_day, day=day, time=time, days=days, form=form)
 
 
 if __name__ == '__main__':
